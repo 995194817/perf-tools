@@ -23,6 +23,8 @@ Using ftrace:
 
 - [iosnoop](iosnoop): trace disk I/O with details including latency. [Examples](examples/iosnoop_example.txt).
 - [iolatency](iolatency): summarize disk I/O latency as a histogram. [Examples](examples/iolatency_example.txt).
+- [bcache-iosnoop](iosnoop): trace bcache disk I/O with details including latency. [Examples](examples/bcache-iosnoop_example.txt).
+- [bcache-iolatency](iolatency): summarize bcache disk I/O latency as a histogram. [Examples](examples/bcache-iolatency_example.txt).
 - [execsnoop](execsnoop): trace process exec() with command line argument details. [Examples](examples/execsnoop_example.txt).
 - [opensnoop](opensnoop): trace open() syscalls showing filenames. [Examples](examples/opensnoop_example.txt).
 - [killsnoop](killsnoop): trace kill() signals showing process and signal details. [Examples](examples/killsnoop_example.txt).

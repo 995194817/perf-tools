@@ -1,0 +1,73 @@
+Demonstrations of bcache-iosnoop, the Linux ftrace version.
+
+
+Here's Linux 3.10, tracing bcache deivce:
+
+# lsblk
+NAME        MAJ:MIN RM   SIZE RO TYPE MOUNTPOINT
+sdb           8:16   0   3.7T  0 disk 
+└─sdb1        8:17   0   3.5T  0 part 
+  └─bcache0 252:0    0   3.5T  0 disk /sandstone-data/sds-6
+sdc           8:32   0   3.7T  0 disk 
+└─sdc1        8:33   0   3.5T  0 part 
+  └─bcache1 252:1    0   3.5T  0 disk /sandstone-data/sds-10
+sdd           8:48   0 447.1G  0 disk 
+└─sdd6        8:54   0 388.1G  0 part 
+  ├─bcache0 252:0    0   3.5T  0 disk /sandstone-data/sds-6
+  └─bcache1 252:1    0   3.5T  0 disk /sandstone-data/sds-10
+
+
+# ./bcache-iosnoop 
+Tracing block I/O. Ctrl-C to end.
+COMM            PID    TYPE DEV      BLOCK        BYTES     LATms
+wb_throttle     17982  WS   8,33     4268117120   8192       0.12
+wb_throttle     17982  FWS  8,33     16           0          0.09
+wb_throttle     17982  WS   8,33     5760661216   8192       0.14
+wb_throttle     17982  WS   8,33     5760661136   4096       0.16
+wb_throttle     17982  WS   8,33     5760661160   4096       0.16
+wb_throttle     17982  FWS  8,33     16           0          0.65
+tp_fstore_op    17704  R    8,17     4220512048   4096       0.21
+wb_throttle     17982  WS   8,33     1889974248   16384      0.14
+wb_throttle     17982  WS   8,33     1889973656   40960      0.29
+[...]
+
+
+Examining all writes on bcache0 only:
+
+# ./bcache-iosnoop -d 8,17 -i *W*
+Tracing block I/O. Ctrl-C to end.
+COMM            PID    TYPE DEV      BLOCK        BYTES     LATms
+xfsaild/bcache0 14605  WM   8,17     16986256     65536      4.22
+xfsaild/bcache0 14605  WM   8,17     22112008     4096       4.22
+xfsaild/bcache0 14605  WM   8,17     29024920     4096       4.21
+xfsaild/bcache0 14605  WM   8,17     29943184     65536      4.21
+xfsaild/bcache0 14605  WM   8,17     33098184     4096       4.21
+xfsaild/bcache0 14605  WM   8,17     38652352     4096       4.21
+xfsaild/bcache0 14605  WM   8,17     38652688     65536      4.20
+filestore_sync  17699  FWFSM 8,17     3728160064   110592     0.64
+filestore_sync  17699  WS   8,17     128          4096       0.09
+filestore_sync  17699  FWFSM 8,17     3728160280   8192       0.16
+[...]
+
+
+Use -h to print the USAGE message:
+
+# ./bcache-iosnoop -h
+USAGE: bcache-iosnoop [-hQst] [-d device] [-i iotype] [-p PID] [-n name]
+               [duration]
+                 -d device       # device string (eg, "202,1)
+                 -i iotype       # match type (eg, '*R*' for all reads)
+                 -n name         # process name to match on I/O issue
+                 -p PID          # PID to match on I/O issue
+                 -s              # include start time of I/O (s)
+                 -t              # include completion time of I/O (s)
+                 -h              # this usage message
+                 duration        # duration seconds, and use buffers
+  eg,
+       bcache-iosnoop                   # watch block I/O live (unbuffered)
+       bcache-iosnoop 1                 # trace 1 sec (buffered)
+       bcache-iosnoop -ts               # include start and end timestamps
+       bcache-iosnoop -i '*R*'          # trace reads
+       bcache-iosnoop -p 91             # show I/O issued when PID 91 is on-CPU
+
+See the man page and example file for more info.

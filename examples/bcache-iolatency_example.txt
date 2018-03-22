@@ -1,0 +1,136 @@
+Demonstrations of bcache-iolatency, the Linux ftrace version.
+
+
+# lsblk
+NAME        MAJ:MIN RM   SIZE RO TYPE MOUNTPOINT
+sdb           8:16   0   3.7T  0 disk 
+└─sdb1        8:17   0   3.5T  0 part 
+  └─bcache0 252:0    0   3.5T  0 disk /sandstone-data/sds-6
+sdc           8:32   0   3.7T  0 disk 
+└─sdc1        8:33   0   3.5T  0 part 
+  └─bcache1 252:1    0   3.5T  0 disk /sandstone-data/sds-10
+sdd           8:48   0 447.1G  0 disk 
+└─sdd6        8:54   0 388.1G  0 part 
+  ├─bcache0 252:0    0   3.5T  0 disk /sandstone-data/sds-6
+  └─bcache1 252:1    0   3.5T  0 disk /sandstone-data/sds-10
+
+
+# ./bcache-iolatency
+Tracing block I/O. Output every 1 seconds. Ctrl-C to end.
+
+  >=(ms) .. <(ms)   : I/O      |Distribution                          |
+       0 -> 1       : 4381     |######################################|
+       1 -> 2       : 9        |#                                     |
+       2 -> 4       : 5        |#                                     |
+       4 -> 8       : 0        |                                      |
+       8 -> 16      : 1        |#                                     |
+
+  >=(ms) .. <(ms)   : I/O      |Distribution                          |
+       0 -> 1       : 4053     |######################################|
+       1 -> 2       : 18       |#                                     |
+       2 -> 4       : 9        |#                                     |
+       4 -> 8       : 2        |#                                     |
+       8 -> 16      : 1        |#                                     |
+      16 -> 32      : 1        |#                                     |
+
+  >=(ms) .. <(ms)   : I/O      |Distribution                          |
+       0 -> 1       : 4658     |######################################|
+       1 -> 2       : 9        |#                                     |
+       2 -> 4       : 2        |#                                     |
+
+  >=(ms) .. <(ms)   : I/O      |Distribution                          |
+       0 -> 1       : 4298     |######################################|
+       1 -> 2       : 17       |#                                     |
+       2 -> 4       : 10       |#                                     |
+       4 -> 8       : 1        |#                                     |
+       8 -> 16      : 1        |#                                     |
+^C
+Ending tracing...
+
+
+# ./iolatency 5 3
+Tracing block I/O. Output every 5 seconds.
+
+  >=(ms) .. <(ms)   : I/O      |Distribution                          |
+       0 -> 1       : 2809     |######################################|
+       1 -> 2       : 32       |#                                     |
+       2 -> 4       : 14       |#                                     |
+       4 -> 8       : 6        |#                                     |
+       8 -> 16      : 7        |#                                     |
+      16 -> 32      : 14       |#                                     |
+      32 -> 64      : 39       |#                                     |
+      64 -> 128     : 1556     |######################                |
+
+  >=(ms) .. <(ms)   : I/O      |Distribution                          |
+       0 -> 1       : 3027     |######################################|
+       1 -> 2       : 19       |#                                     |
+       2 -> 4       : 6        |#                                     |
+       4 -> 8       : 5        |#                                     |
+       8 -> 16      : 3        |#                                     |
+      16 -> 32      : 7        |#                                     |
+      32 -> 64      : 14       |#                                     |
+      64 -> 128     : 540      |#######                               |
+
+  >=(ms) .. <(ms)   : I/O      |Distribution                          |
+       0 -> 1       : 2939     |######################################|
+       1 -> 2       : 25       |#                                     |
+       2 -> 4       : 15       |#                                     |
+       4 -> 8       : 2        |#                                     |
+       8 -> 16      : 3        |#                                     |
+      16 -> 32      : 7        |#                                     |
+      32 -> 64      : 17       |#                                     |
+      64 -> 128     : 936      |#############                         |
+
+Ending tracing...
+
+
+And now bcache0 only:
+
+# ./iolatency -d 8,17 5
+Tracing block I/O. Output every 5 seconds. Ctrl-C to end.
+
+  >=(ms) .. <(ms)   : I/O      |Distribution                          |
+       0 -> 1       : 1427     |######################################|
+       1 -> 2       : 5        |#                                     |
+       2 -> 4       : 3        |#                                     |
+
+  >=(ms) .. <(ms)   : I/O      |Distribution                          |
+       0 -> 1       : 1409     |######################################|
+       1 -> 2       : 6        |#                                     |
+       2 -> 4       : 1        |#                                     |
+       4 -> 8       : 1        |#                                     |
+
+  >=(ms) .. <(ms)   : I/O      |Distribution                          |
+       0 -> 1       : 1478     |######################################|
+       1 -> 2       : 6        |#                                     |
+       2 -> 4       : 5        |#                                     |
+       4 -> 8       : 0        |                                      |
+       8 -> 16      : 2        |#                                     |
+
+  >=(ms) .. <(ms)   : I/O      |Distribution                          |
+       0 -> 1       : 1437     |######################################|
+       1 -> 2       : 5        |#                                     |
+       2 -> 4       : 7        |#                                     |
+       4 -> 8       : 0        |                                      |
+       8 -> 16      : 1        |#                                     |
+[...]
+
+
+Use -h to print the USAGE message:
+
+# ./bcache-iolatency -h
+USAGE: bcache-iolatency [-hQT] [-d device] [-i iotype] [interval [count]]
+                 -d device       # device string (eg, "202,1)
+                 -i iotype       # match type (eg, '*R*' for all reads)
+                 -T              # timestamp on output
+                 -h              # this usage message
+                 interval        # summary interval, seconds (default 1)
+                 count           # number of summaries
+  eg,
+       bcache-iolatency                 # summarize latency every second
+       bcache-iolatency 5 2             # 2 x 5 second summaries
+       bcache-iolatency -i '*R*'        # trace reads
+       bcache-iolatency -d 202,1        # trace device 202,1 only
+
+See the man page and example file for more info.
+
