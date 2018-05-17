@@ -212,6 +212,7 @@ fi ) | $awk -v o=$offset -v opt_name=$opt_name -v name=$name \
 		sub(/.*-/, "", pid)
 		time = $(3+o); sub(":", "", time)
 		dev = $(5+o)
+		nsec = $(NF-4)
 	}
 
 	# block I/O request
@@ -226,6 +227,7 @@ fi ) | $awk -v o=$offset -v opt_name=$opt_name -v name=$name \
 		starts[dev, loc] = time
 		comms[dev, loc] = comm
 		pids[dev, loc] = pid
+		nsecs[dev, loc] = nsec
 		next
 	}
 
@@ -236,7 +238,6 @@ fi ) | $awk -v o=$offset -v opt_name=$opt_name -v name=$name \
 		#
 		dir = $(6+o)
 		loc = $(NF-6)
-		nsec = $(NF-4)
 
 		if (starts[dev, loc] > 0) {
 			latency = sprintf("%.2f",
@@ -249,7 +250,7 @@ fi ) | $awk -v o=$offset -v opt_name=$opt_name -v name=$name \
 			if (opt_end)
 				printf "%-15s ", time
 			printf "%-15.15s %-6s %-4s %-8s %-12s %-6s %8s\n",
-			    comm, pid, dir, dev, loc, nsec * 512, latency
+			    comm, pid, dir, dev, loc, nsecs[dev, loc] * 512, latency
 			if (!opt_duration)
 				fflush()
 
